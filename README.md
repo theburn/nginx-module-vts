@@ -1,3 +1,11 @@
+CHANGE HISTORY
+===============
+1. add worker_process_number
+
+
+
+
+
 Nginx virtual host traffic status module
 ==========
 
