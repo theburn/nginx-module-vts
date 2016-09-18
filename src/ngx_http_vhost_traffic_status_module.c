@@ -60,9 +60,10 @@
     "\"processingCounts\":%ui"                                                 \
     "}"
 
-#define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_MAIN "\"nginxVersion\":\"%s\"," \
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_MAIN "\"nginxVersion\":\"%d\"," \
     "\"loadMsec\":%M,"                                                         \
     "\"nowMsec\":%M,"                                                          \
+    "\"worker_processes\":%u,"                                                          \
     "\"connections\":{"                                                        \
     "\"active\":%uA,"                                                          \
     "\"reading\":%uA,"                                                         \
@@ -96,7 +97,7 @@
     "\"scarce\":%uA"                                                           \
     "},"                                                                       \
     "\"overCounts\":{"                                                         \
-    "\"maxIntegerSize\":%uA,"                                                  \
+    "\"maxIntegerSize\":%s,"                                                   \
     "\"requestCounter\":%uA,"                                                  \
     "\"inBytes\":%uA,"                                                         \
     "\"outBytes\":%uA,"                                                        \
@@ -128,7 +129,7 @@
     "\"5xx\":%uA"                                                              \
     "},"                                                                       \
     "\"overCounts\":{"                                                         \
-    "\"maxIntegerSize\":%uA,"                                                  \
+    "\"maxIntegerSize\":%s,"                                                   \
     "\"requestCounter\":%uA,"                                                  \
     "\"inBytes\":%uA,"                                                         \
     "\"outBytes\":%uA,"                                                        \
@@ -162,7 +163,7 @@
     "\"backup\":%s,"                                                           \
     "\"down\":%s,"                                                             \
     "\"overCounts\":{"                                                         \
-    "\"maxIntegerSize\":%uA,"                                                  \
+    "\"maxIntegerSize\":%s,"                                                   \
     "\"requestCounter\":%uA,"                                                  \
     "\"inBytes\":%uA,"                                                         \
     "\"outBytes\":%uA,"                                                        \
@@ -192,7 +193,7 @@
     "\"scarce\":%uA"                                                           \
     "},"                                                                       \
     "\"overCounts\":{"                                                         \
-    "\"maxIntegerSize\":%uA,"                                                  \
+    "\"maxIntegerSize\":%s,"                                                   \
     "\"inBytes\":%uA,"                                                         \
     "\"outBytes\":%uA,"                                                        \
     "\"miss\":%uA,"                                                            \
@@ -364,8 +365,8 @@
 )
 
 #define ngx_http_vhost_traffic_status_max_integer (NGX_ATOMIC_T_LEN < 12)      \
-    ? 0xffffffff                                                               \
-    : 0xffffffffffffffff
+    ? "4294967295"                                                             \
+    : "18446744073709551615"
 
 #define ngx_http_vhost_traffic_status_boolean_to_string(b) (b) ? "true" : "false"
 
@@ -523,6 +524,12 @@ typedef struct {
 
     ngx_rbtree_node_t                              **node_caches;
 } ngx_http_vhost_traffic_status_loc_conf_t;
+
+// global variables
+
+ngx_int_t ngx_worker_process_num;
+
+/*-------------------------*/
 
 
 #if !defined(nginx_version) || nginx_version < 1007009
@@ -1274,7 +1281,7 @@ ngx_http_vhost_traffic_status_limit_handler_traffic(ngx_http_request_t *r,
     n = traffics->nelts;
 
     for (i = 0; i < n; i++) {
-        if (&limits[i].variable == NULL) {
+        if (limits[i].variable.value.len <= 0) {
             continue;
         }
 
@@ -2148,7 +2155,7 @@ ngx_http_vhost_traffic_status_shm_add_filter_node(ngx_http_request_t *r,
     n = filter_keys->nelts;
 
     for (i = 0; i < n; i++) {
-        if (&filters[i].filter_key == NULL || &filters[i].filter_name == NULL) {
+        if (filters[i].filter_key.value.len <= 0) {
             continue;
         }
 
@@ -2290,7 +2297,9 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r)
     ngx_http_upstream_srv_conf_t   *uscf, **uscfp;
     ngx_http_upstream_main_conf_t  *umcf;
 
-    if (r->upstream_states == NULL || r->upstream_states->nelts == 0) {
+    if (r->upstream_states == NULL || r->upstream_states->nelts == 0
+        || r->upstream->state == NULL)
+    {
         return NGX_OK;
     }
 
@@ -2319,12 +2328,24 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r)
             }
         }
 
-        return NGX_ERROR;
+        /* routine for proxy_pass|fastcgi_pass|... $variables */
+        uscf = ngx_pcalloc(r->pool, sizeof(ngx_http_upstream_srv_conf_t));
+        if (uscf == NULL) {
+            return NGX_ERROR;
+        }
+
+        uscf->host = u->resolved->host;
+        uscf->port = u->resolved->port;
     }
 
 found:
 
     state = r->upstream_states->elts;
+    if (state[0].peer == NULL) {
+        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                      "shm_add_upstream::peer failed");
+        return NGX_ERROR;
+    }
 
     dst.len = (uscf->port ? 0 : uscf->host.len + sizeof("@") - 1) + state[0].peer->len;
     dst.data = ngx_pnalloc(r->pool, dst.len);
@@ -3529,7 +3550,7 @@ ngx_http_vhost_traffic_status_display_set_main(ngx_http_request_t *r,
     wa = *ngx_stat_waiting;
 
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_MAIN, NGINX_VERSION,
-                      vtscf->start_msec, now, ac, rd, wr, wa, ap, hn, rq);
+                      vtscf->start_msec, now, ngx_worker_process_num ,ac, rd, wr, wa, ap, hn, rq);
 
     return buf;
 }
@@ -4993,11 +5014,15 @@ ngx_http_vhost_traffic_status_init(ngx_conf_t *cf)
 {
     ngx_http_handler_pt        *h;
     ngx_http_core_main_conf_t  *cmcf;
+    ngx_core_conf_t            *ccf;
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, cf->log, 0,
                    "http vts init");
 
     cmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
+    ccf = (ngx_core_conf_t *) ngx_get_conf(cf->cycle->conf_ctx, ngx_core_module);
+
+    ngx_worker_process_num = ccf->worker_processes;  
 
     h = ngx_array_push(&cmcf->phases[NGX_HTTP_PREACCESS_PHASE].handlers);
     if (h == NULL) {

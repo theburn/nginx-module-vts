@@ -61,12 +61,14 @@ Table of Contents
 * [Author](#author)
 
 ## Version
-This document describes nginx-module-vts `v0.1.9` released on 26 Feb 2016.
+This document describes nginx-module-vts `v0.1.10` released on 17 Jul 2016.
 
 ## Dependencies
 * [nginx](http://nginx.org)
 
 ## Compatibility
+* 1.11.x (last tested: 1.11.2)
+* 1.10.x (last tested: 1.10.1)
 * 1.9.x (last tested: 1.9.9)
 * 1.8.x (last tested: 1.8.0)
 * 1.6.x (last tested: 1.6.3)
