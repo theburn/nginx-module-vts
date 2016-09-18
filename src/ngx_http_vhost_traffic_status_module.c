@@ -60,7 +60,7 @@
     "\"processingCounts\":%ui"                                                 \
     "}"
 
-#define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_MAIN "\"nginxVersion\":\"%d\"," \
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_MAIN "\"nginxVersion\":\"%s\"," \
     "\"loadMsec\":%M,"                                                         \
     "\"nowMsec\":%M,"                                                          \
     "\"worker_processes\":%u,"                                                          \
