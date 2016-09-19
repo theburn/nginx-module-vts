@@ -64,6 +64,8 @@
     "\"loadMsec\":%M,"                                                         \
     "\"nowMsec\":%M,"                                                          \
     "\"worker_processes\":%u,"                                                 \
+    "\"max_conn_per_worker\":%u,"                                              \
+    "\"max_nofile\":%u,"                                                       \
     "\"connections\":{"                                                        \
     "\"active\":%uA,"                                                          \
     "\"reading\":%uA,"                                                         \
@@ -527,7 +529,13 @@ typedef struct {
 
 // global variables
 
-ngx_int_t ngx_worker_process_num;
+typedef struct {
+    ngx_int_t ngx_worker_process_num;
+    ngx_int_t max_conn_per_worker;
+    ngx_int_t max_nofile;
+} ngx_epoint_global_conf_t;
+
+ngx_epoint_global_conf_t e_gcf;
 
 /*-------------------------*/
 
@@ -3550,7 +3558,8 @@ ngx_http_vhost_traffic_status_display_set_main(ngx_http_request_t *r,
     wa = *ngx_stat_waiting;
 
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_MAIN, NGINX_VERSION,
-                      vtscf->start_msec, now, ngx_worker_process_num ,ac, rd, wr, wa, ap, hn, rq);
+                      vtscf->start_msec, now, e_gcf.ngx_worker_process_num, 
+                      e_gcf.max_conn_per_worker, e_gcf.max_nofile ,ac, rd, wr, wa, ap, hn, rq);
 
     return buf;
 }
@@ -5022,7 +5031,9 @@ ngx_http_vhost_traffic_status_init(ngx_conf_t *cf)
     cmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
     ccf = (ngx_core_conf_t *) ngx_get_conf(cf->cycle->conf_ctx, ngx_core_module);
 
-    ngx_worker_process_num = ccf->worker_processes;  
+    e_gcf.ngx_worker_process_num = ccf->worker_processes;  
+    e_gcf.max_conn_per_worker = cf->connection_n;
+    e_gcf.max_nofile = ccf->rlimit_nofile;
 
     h = ngx_array_push(&cmcf->phases[NGX_HTTP_PREACCESS_PHASE].handlers);
     if (h == NULL) {
