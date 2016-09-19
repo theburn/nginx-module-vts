@@ -63,9 +63,9 @@
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_MAIN "\"nginxVersion\":\"%s\"," \
     "\"loadMsec\":%M,"                                                         \
     "\"nowMsec\":%M,"                                                          \
-    "\"worker_processes\":%u,"                                                 \
-    "\"max_conn_per_worker\":%u,"                                              \
-    "\"max_nofile\":%u,"                                                       \
+    "\"worker_processes\":%d,"                                                 \
+    "\"max_conn_per_worker\":%d,"                                              \
+    "\"max_nofile\":%d,"                                                       \
     "\"connections\":{"                                                        \
     "\"active\":%uA,"                                                          \
     "\"reading\":%uA,"                                                         \
