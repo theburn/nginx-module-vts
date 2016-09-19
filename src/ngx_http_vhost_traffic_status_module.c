@@ -63,7 +63,7 @@
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_MAIN "\"nginxVersion\":\"%s\"," \
     "\"loadMsec\":%M,"                                                         \
     "\"nowMsec\":%M,"                                                          \
-    "\"worker_processes\":%u,"                                                          \
+    "\"worker_processes\":%u,"                                                 \
     "\"connections\":{"                                                        \
     "\"active\":%uA,"                                                          \
     "\"reading\":%uA,"                                                         \
