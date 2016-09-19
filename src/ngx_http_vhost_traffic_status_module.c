@@ -5032,7 +5032,7 @@ ngx_http_vhost_traffic_status_init(ngx_conf_t *cf)
     ccf = (ngx_core_conf_t *) ngx_get_conf(cf->cycle->conf_ctx, ngx_core_module);
 
     e_gcf.ngx_worker_process_num = ccf->worker_processes;  
-    e_gcf.max_conn_per_worker = cf->connection_n;
+    e_gcf.max_conn_per_worker = cf->cycle->connection_n;
     e_gcf.max_nofile = ccf->rlimit_nofile;
 
     h = ngx_array_push(&cmcf->phases[NGX_HTTP_PREACCESS_PHASE].handlers);
