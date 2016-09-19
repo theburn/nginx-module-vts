@@ -5037,7 +5037,18 @@ ngx_http_vhost_traffic_status_init(ngx_conf_t *cf)
     e_gcf.ngx_worker_process_num = ccf->worker_processes;  
     e_gcf.ngx_max_conn_per_worker = cf->cycle->connection_n;
     e_gcf.ngx_max_nofile = ccf->rlimit_nofile;
-    e_gcf.os_max_nofile = cf->cycle->files_n;
+    //e_gcf.os_max_nofile = cf->cycle->files_n; // always equal 0
+    
+
+	struct rlimit  rlmt;
+
+    if (getrlimit(RLIMIT_NOFILE, &rlmt) == -1) {
+        ngx_log_error(NGX_LOG_ALERT, cf->log, 0,
+               "getrlimit(RLIMIT_NOFILE) failed");
+        return NGX_ERROR;
+    }
+
+    e_gcf.os_max_nofile = (ngx_uint_t) rlmt.rlim_cur;
 
     h = ngx_array_push(&cmcf->phases[NGX_HTTP_PREACCESS_PHASE].handlers);
     if (h == NULL) {
