@@ -538,10 +538,11 @@
                 /* main */
                 aPs.refresh(it.nowMsec);
                 var cache = 0;
-                var out = '<div id="serverInfos"><h2>Server main</h2><table><thead><tr><th rowspan="2">Version</th><th rowspan="2">WorkerProcess</th><th rowspan="2">MaxConnPerWorker</th><th rowspan="2">MaxNoFile</th><th rowspan="2">Uptime</th><th colspan="4">Connections</th><th colspan="5">Requests</th></tr><tr><th>active</th><th>reading</th><th>writing</th><th>waiting</th><th>accepted</th><th>handled</th><th>Total</th><th>Req/s</th></tr></thead><tbody>';
-                out += '<tr><td>' + it.nginxVersion + '</td><td>' +it.worker_processes+ '</td><td>'
-                       + it.max_conn_per_worker + '</td><td>'
-                       + it.max_nofile + '</td><td>'
+                var out = '<div id="serverInfos"><h2>Server main</h2><table><thead><tr><th rowspan="2">Version</th><th rowspan="2">WorkerProcess</th><th rowspan="2">MaxConnPerWorker</th><th rowspan="2">NgxMaxNoFile</th><th rowspan="2">OSMaxNoFile</th><th rowspan="2">Uptime</th><th colspan="4">Connections</th><th colspan="5">Requests</th></tr><tr><th>active</th><th>reading</th><th>writing</th><th>waiting</th><th>accepted</th><th>handled</th><th>Total</th><th>Req/s</th></tr></thead><tbody>';
+                out += '<tr><td>' + it.nginxVersion + '</td><td>' +it.ngx_worker_processes_num+ '</td><td>'
+                       + it.ngx_max_conn_per_worker + '</td><td>'
+                       + it.ngx_max_nofile + '</td><td>'
+                       + it.os_max_nofile + '</td><td>'
                        + mTh(it.nowMsec - it.loadMsec) + '</td><td>'
                        + it.connections.active + '</td><td>'
                        + it.connections.reading + '</td><td>'
