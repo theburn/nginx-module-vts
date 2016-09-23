@@ -1,6 +1,9 @@
 CHANGE HISTORY
 ===============
 1. add worker_process_number
+2. add rlimit_nofile
+3. add os_rlimit_nofile
+4. add connection per worker
 
 
 
